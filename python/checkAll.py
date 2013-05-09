@@ -34,7 +34,7 @@ def lookForProblems(path="tarballs"):
                     print(line)
 
 def getDependents(url="http://cran.r-project.org/web/packages/gbm/index.html",
-                  tidy=True):
+                  tidy=False):
     """ Retrieve the gbm CRAN page and parse it to get a list of dependent
         packages. """
     
@@ -52,7 +52,7 @@ def getDependents(url="http://cran.r-project.org/web/packages/gbm/index.html",
     deps = deps.findAll("a")
     res = []
     for d in deps:
-        res.append(d.text)             
+        res.append(str(d.text))
     
     print("Dependent packages:")
     for d in res:
@@ -62,13 +62,36 @@ def getDependents(url="http://cran.r-project.org/web/packages/gbm/index.html",
         from os import system
         system("rm .gbm.html")
 
-    return(d)
+    return(res)
 
 def getDependentTarNames(d):
-    "" Take the names of some R packages and construct the name of
+    """ Take the names of some R packages and construct the name of
        the package source for the latest version. """
 
-    
+    from urllib import urlretrieve
+    from bs4 import BeautifulSoup
+
+    parturl = "http://cran.r-project.org/web/packages/"
+    res = []
+
+    for package in d:
+        url = parturl + package + "/index.html"
+        localfile = "." + package + ".html"
+
+        page = urlretrieve(url, localfile)
+        page = open(localfile, "r").read()
+        soup = BeautifulSoup("".join(page))
+
+        # Get the table with the file name in it
+        smry = "Package " + package + " downloads"
+        soup = soup.find("table", {"summary" : smry})
+        soup = soup.findAll("tr")[0]
+        soup = soup.findAll("a")
+
+        for i in soup:
+            res.append(str(i.text).strip())
+        
+    return(res)
 
 def getPackages(packages, path="tarballs"):
     """ Download specified R package sources. """
@@ -77,16 +100,17 @@ def getPackages(packages, path="tarballs"):
     parturl = "http://cran.r-project.org/src/contrib/"
     
     for package in packages:
-        package = parturl + package + ".tar.gz"
-        urlretrieve(package, path)
+        url = parturl + package
+        print("Downloading " + package)
+        urlretrieve(url, path + "/" + package)
 
 def main(path="tarballs"):
     d = getDependents()
+    d = getDependentTarNames(d)
     getPackages(d)
+    runRCMDcheck()
+    lookForProblems()
 
 main()
-
-#runRCMDcheck()
-#lookForProblems()
     
 

@@ -5,15 +5,10 @@ def runRCMDcheck(path="tarballs"):
     from os import system
     from os.path import isfile, join
 
-    def istar(x):
-        if x[-7:-1] == ".tar.gz":
-            True
-        else:
-            False
-
     files = [f for f in listdir(path) if isfile(join(path, f))]
     
     for f in files:
+        print("Checking " + f)
         system("cd " + path + "; R CMD check " + f + "> output.log")
 
 def lookForProblems(path="tarballs"):
@@ -33,21 +28,23 @@ def lookForProblems(path="tarballs"):
                 if "ERROR" in line or "WARNING" in line or "NOTE" in line:
                     print(line)
 
-def getDependents(url="http://cran.r-project.org/web/packages/gbm/index.html",
-                  tidy=False):
-    """ Retrieve the gbm CRAN page and parse it to get a list of dependent
+def getDependents(package):
+    """ Retrieve a package CRAN page and parse it to get a list of dependent
         packages. """
     
     from urllib import urlretrieve
     from bs4 import BeautifulSoup
 
     # Retrieve page, read it, turn into soup
-    page = urlretrieve(url, ".gbm.html")
-    page = open(".gbm.html", "r").read()
+    url = "http://cran.r-project.org/web/packages/" + package + "/index.html"
+    localfile = "." + package + ".html"
+    
+    page = urlretrieve(url, localfile)
+    page = open(localfile, "r").read()
     soup = BeautifulSoup("".join(page))
 
     # Grab the table of dependents
-    deps = soup.find("table", {"summary" : "Package gbm reverse dependencies"})
+    deps = soup.find("table", {"summary" : "Package " + package + " reverse dependencies"})
     deps = deps.findAll("tr")[0] # First row
     deps = deps.findAll("a")
     res = []
@@ -58,9 +55,6 @@ def getDependents(url="http://cran.r-project.org/web/packages/gbm/index.html",
     for d in res:
         print(d)
 
-    if tidy:
-        from os import system
-        system("rm .gbm.html")
 
     return(res)
 
@@ -104,13 +98,13 @@ def getPackages(packages, path="tarballs"):
         print("Downloading " + package)
         urlretrieve(url, path + "/" + package)
 
-def main(path="tarballs"):
-    d = getDependents()
+def checkDependents(package, path="tarballs"):
+    d = getDependents(package)
     d = getDependentTarNames(d)
     getPackages(d)
     runRCMDcheck()
     lookForProblems()
 
-main()
+
     
 

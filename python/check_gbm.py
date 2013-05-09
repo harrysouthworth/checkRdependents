@@ -1,0 +1,3 @@
+import checkRpackage
+
+checkDependents("gbm")

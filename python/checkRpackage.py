@@ -104,12 +104,11 @@ def getPackages(packages, path="tarballs"):
         urlretrieve(url, path + "/" + package)
 
 def checkDependents(package, path="tarballs"):
+    """ Wrapper for other functions that identify, download and check
+        dependent packages. """
     d = getDependents(package)
     d = getDependentTarNames(d)
     getPackages(d)
     runRCMDcheck()
     lookForProblems()
-
-
-    
 

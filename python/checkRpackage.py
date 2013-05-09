@@ -20,13 +20,18 @@ def lookForProblems(path="tarballs"):
     
     dirs = [f for f in listdir(path) if not isfile(join(path, f))]
 
+    outfile = open("checkRdependents.log", "w")
+
     for directory in dirs:
-        print("\n" + "*"*20 + " " + directory[:-7] + " " + "*"*20 + "\n")
+        s = "\n" + "*"*20 + " " + directory[:-7] + " " + "*"*20 + "\n"
+        print(s)
+        outfile.write(s)
         for file in ["/00install.out", "/00check.log"]:
             infile = open(path + "/" + directory + file)
             for line in infile:
                 if "ERROR" in line or "WARNING" in line or "NOTE" in line:
                     print(line)
+                    outfile.write(line)
 
 def getDependents(package):
     """ Retrieve a package CRAN page and parse it to get a list of dependent

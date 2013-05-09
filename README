@@ -1,7 +1,9 @@
-You need to download fresh versions of all packages listed on the CRAN gbm
-page before getting started.
+Python module for testing an R package prior to submission to CRAN.
 
-If rgdal gives you problems, you can install the required C libraries using a
-sudo apt-get install libgdal1-dev libproj-dev
-http://stackoverflow.com/questions/15248815/rgdal-package-installation
+The module lets you specify a package name (e.g. 'gbm') and it then obtains
+names of dependent packages from CRAN, downloads the latest package sources into
+a directory (defaults to "tarballs"), and runs R CMD check on all of them.
 
+This workflow assumes that you've installed the R CMD checked the package you're
+considering for CRAN submission. As yet, it does not attempt to install any
+further dependencies of the downloaded packages.

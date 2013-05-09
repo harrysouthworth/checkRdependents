@@ -1,0 +1,7 @@
+You need to download fresh versions of all packages listed on the CRAN gbm
+page before getting started.
+
+If rgdal gives you problems, you can install the required C libraries using a
+sudo apt-get install libgdal1-dev libproj-dev
+http://stackoverflow.com/questions/15248815/rgdal-package-installation
+

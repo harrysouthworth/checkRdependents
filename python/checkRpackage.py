@@ -1,3 +1,8 @@
+def unique(seq):
+    seen = set()
+    seen_add = seen.add
+    return [ x for x in seq if x not in seen and not seen_add(x)]
+
 def runRCMDcheck(path="tarballs"):
     """Run R CMD check on all tar.gz files found in path"""
 
@@ -6,15 +11,12 @@ def runRCMDcheck(path="tarballs"):
     from os.path import isfile, join
 
     allfiles = [f for f in listdir(path) if isfile(join(path, f))]
-    # Want only .tar.gz files
-    files = []
-    for f in allfiles:
-        if f[-7:] == ".tar.gz":
-            files.append(f)
+    files = [f for f in allfiles if f[-7:] == ".tar.gz"]
 
     for f in files:
         print("Checking " + f)
-        system("cd " + path + "; R CMD check " + f + "> output.log")
+        cmd = "cd " + path + "; R CMD check " + f + " > output.log"
+        system(cmd)
 
 def lookForProblems(path="tarballs"):
     """Find any instance of 'ERROR', 'WARNING' or 'NOTE' in the output of
@@ -44,11 +46,11 @@ def getDependents(package):
     
     from urllib import urlretrieve
     from bs4 import BeautifulSoup
+    from string import join
 
     # Retrieve page, read it, turn into soup
     url = "http://cran.r-project.org/web/packages/" + package + "/index.html"
     localfile = "." + package + ".html"
-    
     page = urlretrieve(url, localfile)
     page = open(localfile, "r").read()
     soup = BeautifulSoup("".join(page))
@@ -57,15 +59,40 @@ def getDependents(package):
     deps = soup.find("table", {"summary" : "Package " + package + " reverse dependencies"})
     deps = deps.findAll("tr")[0] # First row
     deps = deps.findAll("a")
-    res = []
-    for d in deps:
-        res.append(str(d.text))
+    deps = [str(d.text) for d in deps]
     
     print("Dependent packages:")
-    for d in res:
-        print(d)
+    print(join(deps, ", "))
 
-    return(res)
+    return(deps)
+
+def getDependencies(package):
+    """ Retrieve a package CRAN page and parse it to get a list of packages
+        on which it depends. """
+    
+    from urllib import urlretrieve
+    from bs4 import BeautifulSoup
+    from string import join
+
+    # Retrieve page, read it, turn into soup
+    url = "http://cran.r-project.org/web/packages/" + package + "/index.html"
+    localfile = "." + package + ".html"
+    page = urlretrieve(url, localfile)
+    page = open(localfile, "r").read()
+    soup = BeautifulSoup("".join(page))
+
+    # Grab the table of dependencies
+    deps = soup.find("table", {"summary" : "Package " + package + " summary"})
+    # Want to find the row with dependencies
+    deps = deps.findAll("tr")[1]
+    deps = deps.findAll("a")
+    deps = [str(d.text) for d in deps]
+
+    print(package + " dependencies:")
+    print(join(deps, ", "))
+    
+    return(deps)
+
 
 def getDependentTarNames(d):
     """ Take the names of some R packages and construct the name of
@@ -93,7 +120,7 @@ def getDependentTarNames(d):
 
         for i in soup:
             res.append(str(i.text).strip())
-        
+
     return(res)
 
 def getPackages(packages, path="tarballs"):
@@ -107,15 +134,39 @@ def getPackages(packages, path="tarballs"):
         print("Downloading " + package)
         urlretrieve(url, path + "/" + package)
 
-def checkDependents(package, path="tarballs", download=True):
+def installPackages(packages, location):
+    """ Use R CMD INSTALL to install a bunch of packages to the default library. """
+    from os import system
+
+    for package in packages:
+        cmd = "cd " + location + "; R CMD INSTALL " + package
+        system(cmd)
+
+
+def checkDependents(package, path="tarballs",
+                    dependencies="tarballs/dep", installDependencies=False,
+                    download=True, check=True):
     """ Wrapper for other functions that identify, download and check
         dependent packages. Defaults to downloading fresh versions of
         dependent packages, behaviour which can be overridden by specifying
         download=False. """
     d = getDependents(package)
-    d = getDependentTarNames(d)
+    dep = [getDependencies(i) for i in d]
+    # dep is a list of lists. unlist it
+    dep = [j for i in dep for j in i]
+    dep = unique(dep)
+    dep.remove(package)
+    dep = getDependentTarNames(dep)
+
     if download:
+        d = getDependentTarNames(d)
         getPackages(d)
-    runRCMDcheck()
-    lookForProblems()
+        getPackages(dep, path=dependencies)
+
+    if installDependencies:
+        installPackages(dep, dependencies)
+
+    if check:
+        runRCMDcheck()
+        lookForProblems()
 

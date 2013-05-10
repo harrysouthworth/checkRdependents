@@ -5,8 +5,13 @@ def runRCMDcheck(path="tarballs"):
     from os import system
     from os.path import isfile, join
 
-    files = [f for f in listdir(path) if isfile(join(path, f))]
-    
+    allfiles = [f for f in listdir(path) if isfile(join(path, f))]
+    # Want only .tar.gz files
+    files = []
+    for f in allfiles:
+        if f[-7:] == ".tar.gz":
+            files.append(f)
+
     for f in files:
         print("Checking " + f)
         system("cd " + path + "; R CMD check " + f + "> output.log")
@@ -60,7 +65,6 @@ def getDependents(package):
     for d in res:
         print(d)
 
-
     return(res)
 
 def getDependentTarNames(d):
@@ -103,12 +107,15 @@ def getPackages(packages, path="tarballs"):
         print("Downloading " + package)
         urlretrieve(url, path + "/" + package)
 
-def checkDependents(package, path="tarballs"):
+def checkDependents(package, path="tarballs", download=True):
     """ Wrapper for other functions that identify, download and check
-        dependent packages. """
+        dependent packages. Defaults to downloading fresh versions of
+        dependent packages, behaviour which can be overridden by specifying
+        download=False. """
     d = getDependents(package)
     d = getDependentTarNames(d)
-    getPackages(d)
+    if download:
+        getPackages(d)
     runRCMDcheck()
     lookForProblems()
 

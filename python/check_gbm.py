@@ -1,3 +1,3 @@
-import checkRpackage
+from checkRpackage import *
 
-checkDependents("gbm")
+checkDependents("gbm", download=False)

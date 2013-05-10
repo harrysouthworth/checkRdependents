@@ -142,7 +142,6 @@ def installPackages(packages, location):
         cmd = "cd " + location + "; R CMD INSTALL " + package
         system(cmd)
 
-
 def checkDependents(package, path="tarballs",
                     dependencies="tarballs/dep", installDependencies=False,
                     download=True, check=True):

@@ -18,6 +18,7 @@ def runRCMDcheck(path="tarballs"):
         cmd = "cd " + path + "; R CMD check " + f + " > output.log"
         system(cmd)
 
+
 def lookForProblems(path="tarballs"):
     """Find any instance of 'ERROR', 'WARNING' or 'NOTE' in the output of
        R CMD check"""
@@ -34,11 +35,14 @@ def lookForProblems(path="tarballs"):
         print(s)
         outfile.write(s)
         for file in ["/00install.out", "/00check.log"]:
-            infile = open(path + "/" + directory + file)
-            for line in infile:
-                if "ERROR" in line or "WARNING" in line or "NOTE" in line:
-                    print(line)
-                    outfile.write(line)
+            try:
+                infile = open(path + "/" + directory + file)
+                for line in infile:
+                    if "ERROR" in line or "WARNING" in line or "NOTE" in line:
+                        print(line)
+                        outfile.write(line)
+            except:
+                print(file + " not found.")
 
 def getDependents(package):
     """ Retrieve a package CRAN page and parse it to get a list of dependent
